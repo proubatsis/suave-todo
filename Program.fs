@@ -1,14 +1,10 @@
 ﻿open Suave
 open Suave.Successful
 open TodoDB
+open Newtonsoft.Json
 
-let serializeTodoList (tl:TodoList) =
-    sprintf "{\"id\":%d,\"title\":\"%s\"}" tl.id tl.title
-
-let serializeTodoSeq todos =
-    Seq.map serializeTodoList todos
-    |> String.concat ","
-    |> sprintf "[%s]"
+let serializeTodoSeq (todos: TodoList seq) =
+    JsonConvert.SerializeObject(todos)
 
 let getAllTodoLists s: WebPart =
     fun (x: HttpContext) ->
