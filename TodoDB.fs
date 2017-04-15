@@ -14,17 +14,29 @@ module TodoDB
     connection.Open()
 
     let select readerToRecord q =
+        let rec readSequentially (reader: DbDataReader) (command: NpgsqlCommand) =
+            async {
+                let! hasNext = reader.ReadAsync()
+                if hasNext then
+                    let tl = readerToRecord reader
+                    let! nextseq = readSequentially reader command
+                    return seq {
+                        yield tl
+                        yield! nextseq
+                    }
+                else
+                    reader.Dispose()
+                    command.Dispose()
+                    return Seq.empty
+            }
+
         async {
             let mutable cmd = new NpgsqlCommand()
             cmd.Connection <- connection
             cmd.CommandText <- q
             
             let! reader = Async.AwaitTask (cmd.ExecuteReaderAsync())
-            return seq {
-               while reader.Read() do yield readerToRecord reader
-               reader.Dispose()
-               cmd.Dispose()
-            }
+            return! readSequentially reader cmd
         }
 
     let fetchAllTodoLists =
