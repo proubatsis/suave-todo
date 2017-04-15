@@ -13,7 +13,7 @@ let serializeTodoSeq todos =
 let getAllTodoLists s: WebPart =
     fun (x: HttpContext) ->
         async {
-            let! lists = fetchAllTodoLists
+            let! lists = fetchAllTodoLists()
             return! OK (s lists) x
         }
 
