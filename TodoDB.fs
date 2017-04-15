@@ -13,5 +13,4 @@ module TodoDB
     let connection = connect "localhost" "panagiotis" "mypass" "todosdb"
 
     let fetchAllTodoLists =
-        "select id, title from todo_list"
-        |> select connection readerToTodoList
+        select connection readerToTodoList "select id, title from todo_list" []
