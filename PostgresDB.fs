@@ -7,7 +7,7 @@ module PostgresDB
         conn.Open()
         conn
 
-    let select readerToRecord connection q =
+    let select connection readerToRecord q =
             let rec readSequentially (reader: DbDataReader) (command: NpgsqlCommand) =
                 async {
                     let! hasNext = reader.ReadAsync()

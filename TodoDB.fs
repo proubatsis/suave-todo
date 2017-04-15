@@ -14,4 +14,4 @@ module TodoDB
 
     let fetchAllTodoLists =
         "select id, title from todo_list"
-        |> select readerToTodoList connection
+        |> select connection readerToTodoList
