@@ -23,6 +23,9 @@ module TodoDB
     let readerToTodoList (reader: DbDataReader) =
         { id = reader.GetInt32(0); title = reader.GetString(1) }
 
+    let readerToTodoItem (reader: DbDataReader) =
+        { id = reader.GetInt32(0); todoListId = reader.GetInt32(1); title = reader.GetString(2); completed = reader.GetBoolean(3) }
+
     let readerToTodo (reader: DbDataReader) =
         {
             id = reader.GetInt32(0)
@@ -62,4 +65,20 @@ module TodoDB
                 else
                     Seq.reduce (fun a t -> { a with items = (List.head t.items)::a.items }) results
                     |> Some
+        }
+
+    let fetchItem (todoListId: int) (itemId: int) =
+        async {
+            let sql =
+                "select id, todo_list_id, title, completed
+                from todo_item
+                where id=@id and todo_list_id=@todoListId"
+
+            let! results =
+                [
+                    { name = "todoListId"; value = todoListId }
+                    { name = "id"; value = itemId }
+                ] |> select connection readerToTodoItem sql
+
+            return Seq.first results
         }

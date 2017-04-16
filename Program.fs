@@ -26,14 +26,24 @@ let getTodo id ctx =
             | None -> NOT_FOUND "\"not found\"" ctx
     }
 
+let getTodoItem (todoListId, itemId) ctx =
+    async {
+        let! todoItem = fetchItem todoListId itemId
+        return!
+            match todoItem with
+            | Some(ti) -> OK (serialize ti) ctx
+            | None -> NOT_FOUND "\"not found\"" ctx
+    }
+
 let jsonMime = setMimeType "application/json; charset=utf-8"
 
 [<EntryPoint>]
 let main argv =
     let api =
         [
-            GET >=> path "/todos" >=> getAllTodoLists >=> jsonMime
+            GET >=> pathScan "/todos/%d/%d" getTodoItem >=> jsonMime
             GET >=> pathScan "/todos/%d" getTodo >=> jsonMime
+            GET >=> path "/todos" >=> getAllTodoLists >=> jsonMime
         ] |> choose
 
     let rec start (port: uint16) =
