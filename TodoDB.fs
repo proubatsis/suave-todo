@@ -67,7 +67,7 @@ module TodoDB
                     |> Some
         }
 
-    let fetchItem (todoListId: int) (itemId: int) =
+    let fetchItem ((todoListId: int), (itemId: int)) =
         async {
             let sql =
                 "select id, todo_list_id, title, completed

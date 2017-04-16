@@ -17,23 +17,17 @@ let getAllTodoLists ctx =
         return! OK (serialize lists) ctx
     }
 
-let getTodo id ctx =
+let getSpecific f p ctx =
     async {
-        let! todo = fetchTodo id
+        let! result = f p
         return!
-            match todo with
-            | Some(t) -> OK (serialize t) ctx
+            match result with
+            | Some(r) -> OK (serialize r) ctx
             | None -> NOT_FOUND "\"not found\"" ctx
     }
 
-let getTodoItem (todoListId, itemId) ctx =
-    async {
-        let! todoItem = fetchItem todoListId itemId
-        return!
-            match todoItem with
-            | Some(ti) -> OK (serialize ti) ctx
-            | None -> NOT_FOUND "\"not found\"" ctx
-    }
+let getTodo = getSpecific fetchTodo
+let getTodoItem = getSpecific fetchItem
 
 let jsonMime = setMimeType "application/json; charset=utf-8"
 
