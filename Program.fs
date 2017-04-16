@@ -2,6 +2,7 @@
 open Suave.Filters
 open Suave.Operators
 open Suave.Successful
+open Suave.RequestErrors
 open Suave.Writers
 open TodoDB
 open Newtonsoft.Json
@@ -16,6 +17,15 @@ let getAllTodoLists ctx =
         return! OK (serialize lists) ctx
     }
 
+let getTodo id ctx =
+    async {
+        let! todo = fetchTodo id
+        return!
+            match todo with
+            | Some(t) -> OK (serialize t) ctx
+            | None -> NOT_FOUND "\"not found\"" ctx
+    }
+
 let jsonMime = setMimeType "application/json; charset=utf-8"
 
 [<EntryPoint>]
@@ -23,6 +33,7 @@ let main argv =
     let api =
         [
             GET >=> path "/todos" >=> getAllTodoLists >=> jsonMime
+            GET >=> pathScan "/todos/%d" getTodo >=> jsonMime
         ] |> choose
 
     let rec start (port: uint16) =
