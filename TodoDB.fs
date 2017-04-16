@@ -17,14 +17,29 @@ module TodoDB
     type Todo = {
         id: int
         title: string
-        items: TodoItem seq
+        items: TodoItem list
     }
 
     let readerToTodoList (reader: DbDataReader) =
         { id = reader.GetInt32(0); title = reader.GetString(1) }
 
-    let readerToTodoItem todoListId (reader: DbDataReader) =
-        { id = reader.GetInt32(0); todoListId = todoListId; title = reader.GetString(1); completed = reader.GetBoolean(2) }
+    let readerToTodo (reader: DbDataReader) =
+        {
+            id = reader.GetInt32(0)
+            title = reader.GetString(1)
+            items =
+                try
+                    [
+                        {
+                            id = reader.GetInt32(2)
+                            todoListId = reader.GetInt32(0)
+                            title = reader.GetString(3)
+                            completed = reader.GetBoolean(4)
+                        }
+                    ]
+                with
+                | _ -> []
+        }
 
     let connection = connect "localhost" "panagiotis" "mypass" "todosdb"
 
@@ -33,18 +48,18 @@ module TodoDB
 
     let fetchTodo (id: int) =
         async {
-            let! results =
-                [ { name = "id"; value=id } ]
-                |> select connection readerToTodoList "select id, title from todo_list where id=@id"
-            
-            return!
-                match (Seq.first results) with
-                | Some(tl) ->
-                    async {
-                        let! items =
-                            [ { name="todoListId"; value=id } ]
-                            |> select connection (readerToTodoItem id) "select id, title, completed from todo_item where todo_list_id=@todoListId"
-                        return Some { id = id; title = tl.title; items = items }
-                    }
-                | _ -> async { return None }
+            let sql =
+                "select a.id as id, a.title as list_title, b.id as item_id, b.title as item_title, b.completed
+                from todo_list a
+                left join todo_item b
+                on a.id=b.todo_list_id
+                where a.id=@id"
+
+            let! results = select connection readerToTodo sql [ { name = "id"; value = id } ]
+            return
+                if Seq.isEmpty results then
+                    None
+                else
+                    Seq.reduce (fun a t -> { a with items = (List.head t.items)::a.items }) results
+                    |> Some
         }
